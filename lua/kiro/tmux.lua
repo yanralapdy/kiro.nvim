@@ -13,9 +13,14 @@ function M.find_pane()
 end
 
 function M.send_keys(pane, text)
-  vim.system({ "tmux", "send-keys", "-t", pane, "\x1b[200~" }):wait()
-  vim.system({ "tmux", "send-keys", "-t", pane, text }):wait()
-  vim.system({ "tmux", "send-keys", "-t", pane, "\x1b[201~" }):wait()
+  -- write text to a temp file, load into tmux buffer, paste to target pane, then send Enter
+  local tmp = os.tmpname()
+  local f = io.open(tmp, "w")
+  f:write(text)
+  f:close()
+  vim.system({ "tmux", "load-buffer", "-b", "kiro_buf", tmp }):wait()
+  os.remove(tmp)
+  vim.system({ "tmux", "paste-buffer", "-b", "kiro_buf", "-t", pane }):wait()
   vim.system({ "tmux", "send-keys", "-t", pane, "Enter" }):wait()
 end
 
