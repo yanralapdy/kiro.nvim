@@ -30,7 +30,8 @@ function M.send_keys(pane, text)
   for i, line in ipairs(lines) do
     vim.system({ "tmux", "send-keys", "-t", pane, line, "" }):wait()
     if i < #lines then
-      vim.system({ "tmux", "send-keys", "-t", pane, "M-Enter", "" }):wait()
+      -- Alt+Enter = ESC followed by Enter
+      vim.system({ "tmux", "send-keys", "-t", pane, "\x1b\r", "" }):wait()
     end
   end
   vim.system({ "tmux", "send-keys", "-t", pane, "", "Enter" }):wait()
