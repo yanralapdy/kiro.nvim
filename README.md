@@ -14,7 +14,7 @@ Send editor context to a running kiro-cli session in a tmux pane without leaving
 ```lua
 -- lazy.nvim
 {
-  "tnkapdy/kiro.nvim",
+  "yanralapdy/kiro.nvim",
   dependencies = { "folke/snacks.nvim" },
   opts = {
     pane = nil,          -- tmux pane id (e.g. "%0"); nil = auto-detect
