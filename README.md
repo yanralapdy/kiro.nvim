@@ -5,7 +5,7 @@ Send editor context to a running kiro-cli session in a tmux pane without leaving
 ## Requirements
 
 - Neovim 0.9+
-- tmux
+- tmux (macOS and Linux; Windows not supported)
 - kiro-cli running in a tmux pane
 - [snacks.nvim](https://github.com/folke/snacks.nvim)
 
