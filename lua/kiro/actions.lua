@@ -36,7 +36,7 @@ function M.ask_selection()
 
   snacks.input({ prompt = "Ask kiro: " }, function(input)
     if not input or input == "" then return end
-    local msg = string.format("%s:%d-%d\n%s", path, srow, erow, input)
+    local msg = string.format("%s:%d-%d %s", path, srow, erow, input)
     require("kiro.tmux").send_keys(pane, msg)
   end)
 end
