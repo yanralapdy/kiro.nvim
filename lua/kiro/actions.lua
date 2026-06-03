@@ -32,13 +32,11 @@ function M.ask_selection()
 
   local srow = vim.api.nvim_buf_get_mark(0, "<")[1]
   local erow = vim.api.nvim_buf_get_mark(0, ">")[1]
-  local lines = vim.api.nvim_buf_get_lines(0, srow - 1, erow, false)
-  local ft = vim.bo.filetype
   local path = vim.fn.expand("%")
 
   snacks.input({ prompt = "Ask kiro: " }, function(input)
     if not input or input == "" then return end
-    local msg = string.format("%s:%d-%d\n```%s\n%s\n```\n%s", path, srow, erow, ft, table.concat(lines, "\n"), input)
+    local msg = string.format("%s:%d-%d\n%s", path, srow, erow, input)
     require("kiro.tmux").send_keys(pane, msg)
   end)
 end
