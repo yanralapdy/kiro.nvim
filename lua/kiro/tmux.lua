@@ -26,13 +26,27 @@ function M.find_pane()
 end
 
 function M.send_keys(pane, text)
+  local function send(...)
+    vim.system({ "tmux", "send-keys", "-t", pane, ... }):wait()
+  end
+
+  -- Start bracketed paste: app buffers everything until \x1b[201~
+  send("\x1b[200~")
+
+  -- Send each line with Enter (\r) as separator.
+  -- Inside bracketed paste mode, \r is stored as a literal newline character
+  -- rather than submitting the line.
   local lines = vim.split(text, "\n", { plain = true })
   for i, line in ipairs(lines) do
-    vim.system({ "tmux", "send-keys", "-t", pane, line, "" }):wait()
-    if i < #lines then
-      vim.system({ "tmux", "send-keys", "-t", pane, "\x1b\r", "" }):wait()
+    if i > 1 then
+      send("\r")
     end
+    send(line)
   end
+
+  -- End paste. Text is now in kiro's input buffer.
+  -- User presses Enter manually to submit.
+  send("\x1b[201~")
 end
 
 return M
