@@ -21,14 +21,21 @@ function M.send_range(srow, erow)
 end
 
 function M.opfunc()
-  -- Capture any visual selection before it gets cleared
-  local visual = require("kiro.visual")
-  visual.capture()
+  -- g@ sets '[ and '] marks for the operator range, not '< and '>
+  local srow = vim.fn.getpos("'[")[2]
+  local erow = vim.fn.getpos("']")[2]
 
-  -- Get range from visual module
-  local srow, erow = visual.get_range()
-
-  M.send_range(srow, erow)
+  if srow > 0 and erow > 0 then
+    if srow > erow then
+      srow, erow = erow, srow
+    end
+    M.send_range(srow, erow)
+  else
+    -- Fallback to visual module if operator marks aren't available
+    local visual = require("kiro.visual")
+    local vsrow, verow = visual.get_range()
+    M.send_range(vsrow, verow)
+  end
 end
 
 function M.operator()
