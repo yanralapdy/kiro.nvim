@@ -160,6 +160,12 @@ require("lualine").setup({
 - **Added:** Deduplication for identical diagnostics on the same line.
 - **Added:** `.luarc.json` with `vim` global for Lua language server.
 
+## Compatibility: vim-tmux-navigator
+
+`kiro-cli-term` wraps Neovim in a separate pseudo-terminal, so tmux's process detection (used by [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator)) cannot see `nvim` as the foreground process.
+
+**This is handled automatically.** kiro.nvim sets a pane marker (`@kiro_has_nvim`) and patches the tmux bindings on startup so `C-h/j/k/l` correctly navigate Neovim splits inside kiro-cli-term panes. No manual config needed.
+
 ## Checkhealth
 
 ```vim

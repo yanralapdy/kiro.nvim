@@ -16,7 +16,10 @@ M.config = {
 
 function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
-  
+
+  -- Patch tmux bindings for vim-tmux-navigator compatibility
+  pcall(function() require("kiro.vim-tmux-navigator").setup() end)
+
   -- Setup visual mode detection autocmds
   local visual = require("kiro.visual")
   visual.setup_autocmds()
