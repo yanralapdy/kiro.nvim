@@ -1,109 +1,105 @@
-# kiro.nvim
+# kiro.nvim — Neovim Plugin for AI Coding Agent
 
-Send editor context to a running kiro-cli session in a tmux pane without leaving Neovim.
+A **Neovim plugin** that integrates the [kiro AI coding agent](https://github.com/yanralapdy/kiro-cli) directly into your editor. Send editor context, code selections, and prompts from inside Neovim — kiro runs in a tmux pane or a Neovim terminal split.
+
+> **Keywords:** neovim plugin, lua, coding agent, ai assistant, developer tools, productivity, tmux integration, code analysis, code review
 
 ## Features
 
-- **Context Placeholders** - `@this`, `@buffer`, `@visible`, `@diagnostics`
-- **Predefined Prompts** - explain, fix, document, test, review, optimize
-- **Operator Support** - Vim operator with dot-repeat (`gk`, `gkk`)
-- **Select Function** - Choose from all kiro actions
-- **Session Commands** - new, select, interrupt, compact, scroll
-- **Statusline** - Show kiro connection status
-- **Checkhealth** - `:checkhealth kiro` diagnostic
+- **Session-aware forwarding** — auto-detects running kiro-cli in tmux panes or Neovim terminals; creates one if none exists
+- **Auto-submit** — predefined prompts (fix, explain, optimize, etc.) auto-submit; send file / ask selection stay manual
+- **Context placeholders** — `@this`, `@buffer`, `@visible`, `@diagnostics` replaced with live editor context
+- **Predefined prompts** — explain, fix, document, test, review, optimize
+- **Operator support** — Vim operator with dot-repeat (`gk`, `gkk`)
+- **Session commands** — /new, /sessions, interrupt, compact, scroll, submit, clear
+- **Statusline integration** — show kiro connection status
+- **Health check** — `:checkhealth kiro` verifies setup
+- **Optional snacks.nvim** — enhanced input UI when snacks is available
 
 ## Requirements
 
 - Neovim 0.9+
 - tmux (macOS and Linux; Windows not supported)
-- kiro-cli running in a tmux pane
-- [snacks.nvim](https://github.com/folke/snacks.nvim) (optional, for enhanced picker)
+- [kiro-cli](https://github.com/yanralapdy/kiro-cli) installed and in PATH
+- [snacks.nvim](https://github.com/folke/snacks.nvim) (optional, for enhanced picker/input)
 
 ## Installation
 
+### lazy.nvim
+
 ```lua
--- lazy.nvim
 {
   "yanralapdy/kiro.nvim",
-  dependencies = { "folke/snacks.nvim" },
+  version = "v0.3.0",
+  dependencies = { "folke/snacks.nvim" }, -- optional
   opts = {
-    pane = nil,          -- tmux pane id (e.g. "%0"); nil = auto-detect
-    prefix = "look at ", -- prefix used by send_file
+    pane = nil,           -- tmux pane id (e.g. "%0"); nil = auto-detect
+    prefix = "look at ",  -- prefix used by send_file
+    autosubmit = true,    -- auto-submit predefined prompts
     features = {
-      context = true,    -- enable @placeholder replacement
-      prompts = true,    -- enable predefined prompts
-      operator = true,   -- enable operator support
-      commands = true,   -- enable session commands
-      statusline = true, -- enable statusline component
-      checkhealth = true,-- enable :checkhealth
-      select = true,     -- enable select function
+      context = true,
+      prompts = true,
+      operator = true,
+      commands = true,
+      statusline = true,
+      checkhealth = true,
+      select = true,
     },
   },
   keys = {
-    { "<leader>kf", function() require("kiro").send_file() end, desc = "Kiro: send file" },
-    { "<leader>ka", function() require("kiro").ask_selection() end, desc = "Kiro: ask about selection", mode = { "n", "v" } },
-    { "<leader>ks", function() require("kiro").select() end, desc = "Kiro: select action", mode = { "n", "v" } },
-    { "<leader>kp", function() require("kiro").select_and_ask() end, desc = "Kiro: select prompt", mode = { "n", "v" } },
-    { "gk", function() return require("kiro").operator() end, desc = "Kiro: operator", expr = true },
-    { "gkk", function() return require("kiro").operator() .. "_" end, desc = "Kiro: operator (line)", expr = true },
+    { "<leader>kf", function() require("kiro").send_file() end,      desc = "Kiro: send file" },
+    { "<leader>ka", function() require("kiro").ask_selection() end,  desc = "Kiro: ask about selection", mode = "v" },
+    { "<leader>ks", function() require("kiro").select() end,         desc = "Kiro: select action",       mode = "v" },
+    { "<leader>kp", function() require("kiro").select_and_ask() end, desc = "Kiro: select prompt",       mode = "v" },
+    { "gk", function() vim.o.opfunc = "v:lua:require'kiro.operator'.opfunc" return "g@" end, desc = "Kiro: send range", expr = true, silent = true },
+    { "gkk", function() require("kiro.operator").send_line() end, desc = "Kiro: send line", silent = true },
   },
 }
 ```
 
+## Configuration
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `pane` | `nil` | tmux pane id (e.g. `"%0"`); `nil` = auto-detect |
+| `prefix` | `"look at "` | Prefix for send_file |
+| `autosubmit` | `true` | Auto-submit predefined prompts; send_file/ask_selection always manual |
+| `features.context` | `true` | Enable `@placeholder` replacement |
+| `features.prompts` | `true` | Enable predefined prompts |
+| `features.operator` | `true` | Enable `gk`/`gkk` operator |
+| `features.commands` | `true` | Enable session commands |
+| `features.statusline` | `true` | Enable statusline component |
+| `features.checkhealth` | `true` | Enable `:checkhealth` |
+| `features.select` | `true` | Enable action menu |
+
 ## Usage
 
-### `<leader>kf` — send file
+### `<leader>kf` — Send File
 
-Sends the current buffer's relative path to kiro:
+Sends the current buffer path to kiro. Text is NOT auto-submitted — review before pressing Enter.
 
-```
-look at lua/kiro/actions.lua
-```
+### `<leader>ka` — Ask Selection
 
-### `<leader>ka` — ask about selection
+Visual-select lines, press `<leader>ka`, type your question. Formats and sends a code block with file path, line range, and your question. Manual submit.
 
-Visually select lines, press `<leader>ka`, type your question. Sends:
+### `<leader>ks` — Select Action
 
-```
-lua/kiro/tmux.lua:10-14
-```lua
-function M.find_pane()
-  ...
-end
-```
-```
+Picker menu with all actions: Send File, Ask Selection, Select Prompt, and individual prompts. Prompt actions auto-submit.
 
-### `<leader>ks` — select action
+### `<leader>kp` — Select Prompt
 
-Open a picker to choose from all kiro actions:
-- Send File
-- Ask Selection
-- Select Prompt
-- All predefined prompts
+Picker of predefined prompts (explain, fix, document, test, review, optimize). All auto-submit by default.
 
-### `<leader>kp` — select prompt
+### `gk` / `gkk` — Operator
 
-Open a picker to choose a predefined prompt:
-- Explain
-- Fix
-- Document
-- Test
-- Review
-- Optimize
-
-### `gk` / `gkk` — operator
-
-Use as a Vim operator for dot-repeat:
-
+Vim operator with dot-repeat:
 ```vim
-gkG    " Send from cursor to end of file
-gkk    " Send current line
-3gk}   " Send next 3 paragraphs
+gkG    " From cursor to end of file
+gkk    " Current line
+3gk}   " Next 3 paragraphs
 ```
 
 ## Context Placeholders
-
-Use placeholders in prompts that get replaced with editor context:
 
 | Placeholder | Description |
 |-------------|-------------|
@@ -111,8 +107,6 @@ Use placeholders in prompts that get replaced with editor context:
 | `@buffer` | Entire buffer content |
 | `@visible` | Visible text in current window |
 | `@diagnostics` | Buffer diagnostics (errors, warnings) |
-
-Example: `Explain @this and its context`
 
 ## Predefined Prompts
 
@@ -128,15 +122,55 @@ Example: `Explain @this and its context`
 ## Session Commands
 
 ```lua
-require("kiro").command("session.new")        -- Start new session
-require("kiro").command("session.select")      -- Select session
-require("kiro").command("session.interrupt")   -- Interrupt current task
-require("kiro").command("session.compact")     -- Compact session
+require("kiro").command("session.new")        -- /new
+require("kiro").command("session.select")      -- /sessions
+require("kiro").command("session.interrupt")   -- Ctrl-C
+require("kiro").command("session.compact")     -- /compact
 require("kiro").command("session.page.up")     -- Scroll up
 require("kiro").command("session.page.down")   -- Scroll down
-require("kiro").command("prompt.submit")       -- Submit prompt
-require("kiro").command("prompt.clear")        -- Clear prompt
+require("kiro").command("prompt.submit")       -- Enter
+require("kiro").command("prompt.clear")        -- Ctrl-U
 ```
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph nvim["Neovim Process"]
+        init["init.lua<br/>config + keymaps"]
+        actions["actions.lua<br/>user actions"]
+        session["session.lua<br/>dispatch boundary"]
+        prompts["prompts.lua<br/>library"]
+        commands["commands.lua<br/>session commands"]
+    end
+
+    tmux["tmux pane"]
+    terminal["Neovim :terminal split"]
+    kiro["kiro-cli"]
+
+    init --> actions
+    init --> commands
+    actions --> session
+    prompts --> actions
+    commands --> session
+
+    session -->|find/create tmux pane| tmux
+    session -->|forward text| tmux
+    session -->|no tmux| terminal
+    tmux --> kiro
+    terminal --> kiro
+```
+
+## How it works
+
+1. You press a keybinding (`<leader>kf`, `<leader>kp`, etc.)
+2. The plugin captures file path, visual selection, or opens a prompt picker
+3. Context placeholders (`@this`, `@buffer`, etc.) are replaced with live editor content
+4. `session.try_forward(text, submit)` decides where to send it:
+   - If a kiro-cli session is running in a tmux pane → forward there via bracketed paste
+   - Else if tmux is available → find an idle terminal or create a new pane, start kiro-cli, then forward
+   - Else → find an existing kiro-cli terminal buffer or open a new `botright vsplit`, send via `nvim_chan_send`
+5. If `submit` is true (predefined prompts), Enter is pressed automatically
 
 ## Statusline
 
@@ -153,9 +187,7 @@ require("lualine").setup({
 
 ## Compatibility: vim-tmux-navigator
 
-`kiro-cli-term` wraps Neovim in a separate pseudo-terminal, so tmux's process detection (used by [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator)) cannot see `nvim` as the foreground process.
-
-**This is handled automatically.** kiro.nvim writes a process-tree-walking script and patches the tmux C-h/j/k/l bindings on startup so navigation works inside kiro-cli-term panes. No manual config needed.
+kiro.nvim automatically patches tmux bindings so [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator) navigation works inside kiro-cli terminal panes. No manual config needed.
 
 ## Checkhealth
 
@@ -163,7 +195,8 @@ require("lualine").setup({
 :checkhealth kiro
 ```
 
-Checks:
-- tmux installation
-- kiro-cli pane detection
-- snacks.nvim availability
+Verifies: tmux installation, kiro-cli pane detection, snacks.nvim availability.
+
+## License
+
+MIT
