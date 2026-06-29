@@ -1,5 +1,7 @@
 local M = {}
 
+local session = require("kiro.session")
+
 M.commands = {
   ["session.new"] = "/new",
   ["session.select"] = "/sessions",
@@ -19,7 +21,10 @@ function M.execute(command)
     vim.notify("[kiro] Unknown command: " .. command, vim.log.levels.ERROR)
     return
   end
-  local pane = require("kiro").config.pane or require("kiro.tmux").find_pane()
+  local pane
+  if session.is_tmux_available() then
+    pane = session.find_kiro_pane()
+  end
   if not pane then
     vim.notify("[kiro] No kiro pane found", vim.log.levels.ERROR)
     return

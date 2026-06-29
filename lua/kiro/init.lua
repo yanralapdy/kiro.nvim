@@ -3,6 +3,7 @@ local M = {}
 M.config = {
   pane = nil,
   prefix = "look at ",
+  autosubmit = true,
   features = {
     context = true,
     prompts = true,
@@ -49,5 +50,8 @@ M.check = health.check
 
 -- Expose visual module for direct access if needed
 M.visual = require("kiro.visual")
+
+-- Expose session module for advanced users
+M.session = require("kiro.session")
 
 return M

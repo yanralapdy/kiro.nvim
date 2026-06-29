@@ -1,29 +1,17 @@
 local M = {}
 
-local function resolve_pane()
-  local config = require("kiro").config
-  local pane = config.pane or require("kiro.tmux").find_pane()
-  if not pane then
-    vim.notify("[kiro] no kiro pane found", vim.log.levels.ERROR)
-  end
-  return pane
-end
+local session = require("kiro.session")
 
 function M.send_file()
-  local pane = resolve_pane()
-  if not pane then return end
   local path = vim.fn.expand("%")
   if path == "" then
     vim.notify("[kiro] no file in current buffer", vim.log.levels.ERROR)
     return
   end
-  require("kiro.tmux").send_keys(pane, require("kiro").config.prefix .. path)
+  session.try_forward(require("kiro").config.prefix .. path, false)
 end
 
 function M.ask_selection()
-  local pane = resolve_pane()
-  if not pane then return end
-
   local ok, snacks = pcall(require, "snacks")
   if not ok then
     vim.notify("[kiro] snacks.nvim is required for ask_selection", vim.log.levels.ERROR)
@@ -31,27 +19,7 @@ function M.ask_selection()
   end
 
   local visual = require("kiro.visual")
-  
-  -- Get the range (this checks cache first, then marks, then cursor)
   local srow, erow = visual.get_range()
-  
-  -- Get debug info
-  local debug = visual.debug_info()
-  
-  -- Write debug output
-  local debug_msg = string.format("[kiro DEBUG] mode=%s cursor=%d marks=<%d,%d> vpos=<%d,%d> cache=%s range=%d-%d", 
-    debug.mode, debug.cursor, debug.srow, debug.erow, 
-    debug.v_srow, debug.v_erow,
-    debug.cached and (debug.cached.srow .. "-" .. debug.cached.erow) or "nil", 
-    srow, erow)
-  vim.api.nvim_out_write(debug_msg .. "\n")
-  
-  local f = io.open("/tmp/kiro-debug.txt", "a")
-  if f then
-    f:write(debug_msg .. "\n")
-    f:close()
-  end
-
   local path = vim.fn.expand("%")
   local ft = vim.bo.filetype
 
@@ -62,15 +30,13 @@ function M.ask_selection()
     local lines = vim.api.nvim_buf_get_lines(0, srow - 1, erow, false)
     local code = table.concat(lines, "\n")
     local msg = string.format("%s:%d-%d\n```%s\n%s\n```\n%s", path, srow, erow, ft, code, input)
-    require("kiro.tmux").send_keys(pane, msg)
+    session.try_forward(msg, false) -- always manual submit
   end)
 end
 
 function M.send_prompt(prompt)
-  local pane = resolve_pane()
-  if not pane then return end
   local text = require("kiro.context").replace_placeholders(prompt)
-  require("kiro.tmux").send_keys(pane, text)
+  session.try_forward(text, require("kiro").config.autosubmit)
 end
 
 function M.ask_with_prompt(prompt_name, context)
