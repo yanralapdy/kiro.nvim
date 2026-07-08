@@ -5,7 +5,7 @@ function M.send_line()
   local path = vim.fn.expand("%")
   local ft = vim.bo.filetype
   local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
-  local text = string.format("%s:%d-%d\n```%s\n%s\n```", path, row, row, ft, line)
+  local text = require("kiro.context").format_block(path, row, row, ft, line)
   require("kiro").send_prompt(text)
 end
 
@@ -16,7 +16,7 @@ function M.send_range(srow, erow)
   local code = table.concat(lines, "\n")
   local path = vim.fn.expand("%")
   local ft = vim.bo.filetype
-  local text = string.format("%s:%d-%d\n```%s\n%s\n```", path, srow, erow, ft, code)
+  local text = require("kiro.context").format_block(path, srow, erow, ft, code)
   require("kiro").send_prompt(text)
 end
 

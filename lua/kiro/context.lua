@@ -1,15 +1,34 @@
 local M = {}
 
+function M.format_block(path, srow, erow, filetype, code)
+  return string.format(
+    "TARGET_FILE: %s\nTARGET_LINES: %d-%d\n\nSELECTED_CODE:\n```%s\n%s\n```",
+    path,
+    srow,
+    erow,
+    filetype,
+    code
+  )
+end
+
+function M.build_file_prompt(path)
+  return "TARGET_FILE: " .. path
+end
+
+function M.build_prompt(ctx, text)
+  return ctx.formatted .. "\n\nUSER_REQUEST:\n" .. text
+end
+
 function M.get_this()
   local visual = require("kiro.visual")
   visual.capture()
-  local srow, erow = visual.get_range()
-  local lines = vim.api.nvim_buf_get_lines(0, srow - 1, erow, false)
-  return table.concat(lines, "\n"), srow, erow
+  return visual.get_context().formatted
 end
 
 function M.get_buffer()
-  return table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+  local line_count = vim.api.nvim_buf_line_count(0)
+  local code = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+  return M.format_block(vim.fn.expand("%"), 1, line_count, vim.bo.filetype, code)
 end
 
 function M.get_visible()
@@ -21,7 +40,7 @@ function M.get_visible()
     return vim.fn.line("w$")
   end)
   local lines = vim.api.nvim_buf_get_lines(0, top - 1, bot, false)
-  return table.concat(lines, "\n"), top, bot
+  return M.format_block(vim.fn.expand("%"), top, bot, vim.bo.filetype, table.concat(lines, "\n"))
 end
 
 function M.get_diagnostics()

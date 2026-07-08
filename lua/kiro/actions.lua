@@ -8,7 +8,7 @@ function M.send_file()
     vim.notify("[kiro] no file in current buffer", vim.log.levels.ERROR)
     return
   end
-  session.try_forward(require("kiro").config.prefix .. path, false)
+  session.try_forward(require("kiro.context").build_file_prompt(path), false)
 end
 
 function M.ask_selection()
@@ -18,19 +18,13 @@ function M.ask_selection()
     return
   end
 
-  local visual = require("kiro.visual")
-  local srow, erow = visual.get_range()
-  local path = vim.fn.expand("%")
-  local ft = vim.bo.filetype
+  local ctx = require("kiro.visual").get_context()
 
-  vim.notify(string.format("[kiro] Selection: %d-%d", srow, erow))
+  vim.notify(string.format("[kiro] Selection: %d-%d", ctx.srow, ctx.erow))
 
   snacks.input({ prompt = "Ask kiro: " }, function(input)
     if not input or input == "" then return end
-    local lines = vim.api.nvim_buf_get_lines(0, srow - 1, erow, false)
-    local code = table.concat(lines, "\n")
-    local msg = string.format("%s:%d-%d\n```%s\n%s\n```\n%s", path, srow, erow, ft, code, input)
-    session.try_forward(msg, false) -- always manual submit
+    session.try_forward(require("kiro.context").build_prompt(ctx, input), false) -- always manual submit
   end)
 end
 
@@ -46,12 +40,11 @@ function M.ask_with_prompt(prompt_name, context)
     return
   end
 
-  local text = prompt.prompt
   local ctx = context or require("kiro.visual").get_context()
+  local text = prompt.prompt:gsub("@this", "the selected code")
+  text = require("kiro.context").replace_placeholders(text)
 
-  text = text:gsub("@this", ctx.formatted)
-
-  M.send_prompt(text)
+  session.try_forward(require("kiro.context").build_prompt(ctx, text), require("kiro").config.autosubmit)
 end
 
 function M.select_and_ask()

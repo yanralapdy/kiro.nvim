@@ -158,7 +158,7 @@ function M.get_context()
     erow = erow,
     code = code,
     filetype = ft,
-    formatted = string.format("%s:%d-%d\n```%s\n%s\n```", path, srow, erow, ft, code),
+    formatted = require("kiro.context").format_block(path, srow, erow, ft, code),
   }
 end
 

@@ -34,7 +34,7 @@ A **Neovim plugin** that integrates the [kiro AI coding agent](https://github.co
   dependencies = { "folke/snacks.nvim" }, -- optional
   opts = {
     pane = nil,           -- tmux pane id (e.g. "%0"); nil = auto-detect
-    prefix = "look at ",  -- prefix used by send_file
+    prefix = "look at ",  -- deprecated; send_file uses TARGET_FILE
     autosubmit = true,    -- auto-submit predefined prompts
     features = {
       context = true,
@@ -62,7 +62,7 @@ A **Neovim plugin** that integrates the [kiro AI coding agent](https://github.co
 | Option | Default | Description |
 |--------|---------|-------------|
 | `pane` | `nil` | tmux pane id (e.g. `"%0"`); `nil` = auto-detect |
-| `prefix` | `"look at "` | Prefix for send_file |
+| `prefix` | `"look at "` | Deprecated; send_file uses `TARGET_FILE` |
 | `autosubmit` | `true` | Auto-submit predefined prompts; send_file/ask_selection always manual |
 | `features.context` | `true` | Enable `@placeholder` replacement |
 | `features.prompts` | `true` | Enable predefined prompts |
@@ -76,11 +76,11 @@ A **Neovim plugin** that integrates the [kiro AI coding agent](https://github.co
 
 ### `<leader>kf` — Send File
 
-Sends the current buffer path to kiro. Text is NOT auto-submitted — review before pressing Enter.
+Sends the current buffer as `TARGET_FILE: path`. Text is NOT auto-submitted — review before pressing Enter.
 
 ### `<leader>ka` — Ask Selection
 
-Visual-select lines, press `<leader>ka`, type your question. Formats and sends a code block with file path, line range, and your question. Manual submit.
+Visual-select lines, press `<leader>ka`, type your question. Sends `TARGET_FILE`, `TARGET_LINES`, fenced `SELECTED_CODE`, and `USER_REQUEST`. Manual submit.
 
 ### `<leader>ks` — Select Action
 
